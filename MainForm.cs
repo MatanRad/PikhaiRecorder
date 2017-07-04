@@ -26,35 +26,26 @@ namespace Pikhai_Recorder
                 public TimeSpan Released;
             }
 
-            string filepath;
             List<Note> Notes = new List<Note>();
 
             public double Frequency = 100;
             public double Amplitude = 100;
+            public double Phase = 0;
 
             private void PlayForTime(TimeSpan span)
             {
                 DirectSoundOut output = new DirectSoundOut();
-                int streamsize = (int)Math.Ceiling(span.TotalSeconds * 44100);
 
-                MemoryStream mstream = new MemoryStream();
+                long Milliseconds = (int)Math.Ceiling(span.TotalMilliseconds);
 
-                WaveFileWriter writer = new WaveFileWriter(mstream, new WaveFormat(44100, 1));
-                for (int i = 0; i < streamsize; i++) writer.WriteSample((float)Amplitude * (float)Math.Sin((2 * Math.PI * i * Frequency) / 44100));
-
-                writer.Flush();
-                
-                mstream.Position = 0;
-
-                WaveFileReader reader = new WaveFileReader(mstream);
-                WaveChannel32 wav = new WaveChannel32(reader);
-                wav.PadWithZeroes = false;
+                WaveStream wav = new StaticWavStream(Milliseconds, Frequency, Amplitude, Phase);
 
                 output.Init(wav);
                 output.Play();
                 while (output.PlaybackState == PlaybackState.Playing);
+                output.Dispose();
 
-                reader.Close();
+                wav.Close();
             }
 
             public void Play()
